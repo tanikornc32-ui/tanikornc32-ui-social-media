@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "Branch": {
+      "title": "Autobacs Branch",
+      "description": "Information about an Autobacs branch and its social media links.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "location": { "type": "string" },
+        "socialLinks": {
+          "type": "object",
+          "properties": {
+            "google": { "type": "string" },
+            "tiktok": { "type": "string" },
+            "facebook": { "type": "string" }
+          }
+        },
+        "lastSync": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "location"]
+    },
+    "Metric": {
+      "title": "Social Media Metric",
+      "description": "Historical performance data for a branch on a specific platform.",
+      "type": "object",
+      "properties": {
+        "branchId": { "type": "string" },
+        "platform": { "type": "string", "enum": ["google", "tiktok", "facebook"] },
+        "date": { "type": "string", "format": "date" },
+        "likes": { "type": "number" },
+        "views": { "type": "number" },
+        "comments": { "type": "number" },
+        "rating": { "type": "number" },
+        "sentiment": { "type": "string", "enum": ["positive", "neutral", "negative"] },
+        "engagementRate": { "type": "number" }
+      },
+      "required": ["branchId", "platform", "date"]
+    }
+  },
+  "firestore": {
+    "/branches/{branchId}": {
+      "schema": "Branch",
+      "description": "Collection of all Autobacs branches."
+    },
+    "/metrics/{metricId}": {
+      "schema": "Metric",
+      "description": "Historical metrics for all branches."
+    }
+  }
+}

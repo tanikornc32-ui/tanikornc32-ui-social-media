@@ -1,0 +1,82 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: branches
+// Document ID: {branchId}
+// Fields:
+//   - id: string (required)
+//   - name: string (required)
+//   - location: string (required)
+//   - socialLinks: map (optional)
+//   - lastSync: timestamp (optional)
+//
+// Collection: metrics
+// Document ID: {metricId}
+// Fields:
+//   - branchId: string (required)
+//   - platform: string (required, enum: ['google', 'tiktok', 'facebook'])
+//   - date: timestamp (required)
+//   - likes: number (optional)
+//   - views: number (optional)
+//   - comments: number (optional)
+//   - rating: number (optional)
+//   - sentiment: string (optional, enum: ['positive', 'neutral', 'negative'])
+//   - engagementRate: number (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "Tanikorn.C32@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidBranch(data) {
+      return data.keys().hasAll(['id', 'name', 'location']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 500;
+    }
+
+    function isValidMetric(data) {
+      return data.keys().hasAll(['branchId', 'platform', 'date']) &&
+             data.branchId is string &&
+             data.platform in ['google', 'tiktok', 'facebook'] &&
+             data.date is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAdmin();
+    }
+
+    match /branches/{branchId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidBranch(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /metrics/{metricId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidMetric(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
